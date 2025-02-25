@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
@@ -107,9 +108,10 @@ export class ArticlesService {
       where: {
         OR: [{ title: { contains: query } }, { content: { contains: query } }],
       },
+      orderBy: { createdAt: 'desc' },
     });
     if (articles.length === 0) {
-      throw new BadRequestException('No articles found');
+      throw new NotFoundException('No articles found');
     }
     return {
       status: 'success',
