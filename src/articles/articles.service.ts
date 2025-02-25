@@ -69,7 +69,6 @@ export class ArticlesService {
     };
   }
 
-
   async remove(id: number) {
     await this.findOne(id);
     const deletedArticle = await this.prisma.article.delete({
@@ -101,5 +100,20 @@ export class ArticlesService {
     });
 
     return { message: 'Image uploaded successfully', article: updatedArticle };
+  }
+
+  async search(query: string) {
+    const articles = await this.prisma.article.findMany({
+      where: {
+        OR: [{ title: { contains: query } }, { content: { contains: query } }],
+      },
+    });
+    if (articles.length === 0) {
+      throw new BadRequestException('No articles found');
+    }
+    return {
+      status: 'success',
+      articles,
+    };
   }
 }

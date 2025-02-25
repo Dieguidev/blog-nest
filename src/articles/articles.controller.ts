@@ -100,4 +100,13 @@ export class ArticlesController {
   ) {
     return this.articlesService.uploadImage(Number(id), file.filename);
   }
+
+  @Get('/search/:query')
+  search(@Param('query') query: string) {
+    try {
+      return this.articlesService.search(query);
+    } catch (error) {
+      throw new InternalServerErrorException('Something went wrong');
+    }
+  }
 }
