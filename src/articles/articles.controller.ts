@@ -19,7 +19,8 @@ import { GetAllArticlesDto } from './dto/get-all-articles.dto';
 import { IdValidationPipe } from 'src/common/pipes/id-validation.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import { existsSync, unlinkSync } from 'fs';
 
 @Controller('articles')
 export class ArticlesController {
@@ -74,33 +75,29 @@ export class ArticlesController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads',
+        destination: './uploads', // Carpeta donde se guardan las imágenes
         filename: (req, file, cb) => {
-          const id = req.params.id;
-          const fileExt = extname(file.originalname); // Obtener la extensión del archivo
-          const filename = `${id}${fileExt}`; // Nombre del archivo basado en el ID
+          const id = req.params.id; // ID del artículo como nombre de archivo
+          const fileExt = extname(file.originalname); // Extraer la extensión del archivo
+          const filename = `${id}${fileExt}`;
+
+          // Ruta completa de la imagen anterior
+          const oldImagePath = join(__dirname, '..', '..', 'uploads', filename);
+
+          // Si ya existe una imagen con ese nombre, eliminarla antes de guardar la nueva
+          if (existsSync(oldImagePath)) {
+            unlinkSync(oldImagePath);
+          }
+
           cb(null, filename);
         },
       }),
-      fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
-          return cb(
-            new BadRequestException('Only image files are allowed!'),
-            false,
-          );
-        }
-        cb(null, true);
-      },
     }),
   )
   async uploadImage(
-    @Param('id', IdValidationPipe) id: string,
+    @Param('id') id: number,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    return this.articlesService.uploadImage(+id, file.filename);
+    return this.articlesService.uploadImage(Number(id), file.filename);
   }
 }

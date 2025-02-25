@@ -84,21 +84,17 @@ export class ArticlesService {
   async uploadImage(id: number, filename: string) {
     const imageUrl = `http://localhost:3000/uploads/${filename}`;
 
-    // Obtener el artículo y verificar si tiene una imagen previa
+    // Verificar si el artículo existe
     const article = await this.prisma.article.findUnique({
       where: { id },
-      select: { image: true }, // Solo traemos la imagen
+      select: { image: true },
     });
 
-    // Si existe una imagen previa, eliminarla
-    if (article?.image) {
-      const oldImagePath = join(__dirname, '..', '..', 'uploads', article.image.split('/').pop());
-      if (existsSync(oldImagePath)) {
-        unlinkSync(oldImagePath); // Eliminar la imagen anterior
-      }
+    if (!article) {
+      throw new Error('Article not found');
     }
 
-    // Actualizar el campo `image` con la nueva imagen
+    // Actualizar el artículo con la nueva imagen
     const updatedArticle = await this.prisma.article.update({
       where: { id },
       data: { image: imageUrl },
